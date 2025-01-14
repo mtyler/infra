@@ -1,11 +1,11 @@
 terraform {
-  required_version = ">= 0.13"
+    required_version = ">= 0.13"
 
 }
 
 provider "kubernetes" {
-  config_path = "~/.kube/config"
-  config_context = var.context
+    config_path = "~/.kube/config"
+    config_context = var.context
 }
 
 module "gateway" {
@@ -19,4 +19,9 @@ module "dashboard" {
 
 module "prometheus" {
     source = "./modules/prometheus"
+}
+
+module "cafe" {
+    source = "./modules/apps/cafe"
+    context = var.context  
 }
