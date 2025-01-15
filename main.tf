@@ -33,9 +33,13 @@ module "monitoring" {
     storage_class = kubernetes_storage_class.local-storage.metadata[0].name
 }
 
-#module "logging" {
-#    source = "./modules/logging"
-#    depends_on = [ module.dashboard, module.gateway ]
-#    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
-#}
+module "logging" {
+    source = "./modules/logging"
+    depends_on = [ module.dashboard, module.gateway ]
+    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
+}
 
+module "security" {
+    source = "./modules/security"
+    depends_on = [ module.dashboard, module.gateway ]
+}
