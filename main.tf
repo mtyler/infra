@@ -8,6 +8,15 @@ provider "kubernetes" {
     config_context = var.context
 }
 
+resource "kubernetes_storage_class" "local-storage" {
+  metadata {
+    name = "local-storage"
+  }
+  storage_provisioner = "kubernetes.io/no-provisioner"
+  reclaim_policy = "Retain"
+  volume_binding_mode = "WaitForFirstConsumer"
+}
+
 module "gateway" {
     source = "./modules/gateway"
     context = var.context
@@ -15,13 +24,18 @@ module "gateway" {
 
 module "dashboard" {
     source = "./modules/dashboard"
+    depends_on = [ module.gateway ]
 }
 
-module "prometheus" {
-    source = "./modules/prometheus"
+module "monitoring" {
+    source = "./modules/monitoring"
+    depends_on = [ module.dashboard, module.gateway ]
+    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
 }
 
-module "cafe" {
-    source = "./modules/apps/cafe"
-    context = var.context  
-}
+#module "logging" {
+#    source = "./modules/logging"
+#    depends_on = [ module.dashboard, module.gateway ]
+#    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
+#}
+

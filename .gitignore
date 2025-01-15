@@ -1,6 +1,8 @@
 # General
 .vagrant/
 configs/
+ref/
+logs/
 
 # output and logging files
 *.log
@@ -37,3 +39,4 @@ Temporary Items
 .terraform/
 .terraform.lock.hcl
 terraform.tfstate*
+.terraform.tfstate*
