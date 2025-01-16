@@ -32,6 +32,7 @@ resource "helm_release" "prometheus" {
   } 
   set {
     name =  "alertmanager.config.receivers[0].slack_configs[0].api_url"
+    #TODO get this from a secure source
     value = "https://hooks.slack.com/services/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"
   }
   set {
