@@ -31,13 +31,14 @@ module "monitoring" {
     source = "./modules/monitoring"
     depends_on = [ module.dashboard, module.gateway ]
     storage_class = kubernetes_storage_class.local-storage.metadata[0].name
+    slack_api_url = var.slack_api_url
 }
 
-module "logging" {
-    source = "./modules/logging"
-    depends_on = [ module.dashboard, module.gateway ]
-    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
-}
+#module "logging" {
+#    source = "./modules/logging"
+#    depends_on = [ module.dashboard, module.gateway ]
+#    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
+#}
 
 module "security" {
     source = "./modules/security"

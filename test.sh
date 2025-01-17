@@ -42,8 +42,8 @@ ARGS="-var=context=kind-${CLUSTER}"
 
 # terraform deployment
 tofu init  
-tofu plan $ARGS #> last-plan.log 2>&1 | tee -a /dev/stderr
-tofu apply $ARGS -auto-approve #> last-apply.log 2>&1 | tee -a /dev/stderr
+source .env && tofu plan $ARGS #> last-plan.log 2>&1 | tee -a /dev/stderr
+source .env && tofu apply $ARGS -auto-approve #> last-apply.log 2>&1 | tee -a /dev/stderr
 
 ## TODO - test
 ## TODO - cleanup
