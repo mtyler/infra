@@ -3,6 +3,7 @@
 configs/
 ref/
 logs/
+.env
 
 # output and logging files
 *.log
