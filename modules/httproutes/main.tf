@@ -5,6 +5,7 @@ terraform {
 locals {
   context = var.context
   namespace = "gateway"
+  hostname = "k8s.local"
 }
 
 resource "kubernetes_manifest" "gateway" {
@@ -22,7 +23,7 @@ resource "kubernetes_manifest" "gateway" {
           "name" = "http"
           "port" = 80
           "protocol" = "HTTP"
-#          "hostname" = "localhost"
+          "hostname" = "*.${local.hostname}"
         }
       ]
     }
@@ -53,7 +54,6 @@ resource "kubernetes_manifest" "ReferenceGrant" {
       ]
     }
   }
-  
 }
 
 resource "kubernetes_manifest" "http_route_grafana" {
@@ -71,9 +71,9 @@ resource "kubernetes_manifest" "http_route_grafana" {
           sectionName = "http"
         }
       ]
-#      hostnames = [
-#        "localhost"
-#      ]
+      hostnames = [
+        "graf.${local.hostname}"
+      ]
       rules = [
         {
           matches = [
