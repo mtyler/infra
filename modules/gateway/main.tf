@@ -21,10 +21,8 @@ terraform {
 }
 
 locals {
-  ##context = "kind-kind"
-  ##context = "kubernetes-admin@kubernetes"
   context = var.context
-  gateway_namespace = "nginx-gateway"
+  namespace = "gateway"
 }
 
 provider "kubectl" {
@@ -60,7 +58,7 @@ resource "kubectl_manifest" "gateway_api_crds" {
 
 resource "kubernetes_namespace" "namespace" {
   metadata {
-    name = local.gateway_namespace
+    name = local.namespace
   }
 }
 
@@ -68,13 +66,17 @@ resource "kubernetes_namespace" "namespace" {
 resource "helm_release" "nginx_gateway" {
   create_namespace = true
   name       = "ngf"
-  namespace  = local.gateway_namespace
+  namespace  = local.namespace
   repository = "oci://ghcr.io/nginxinc/charts/"
   chart      = "nginx-gateway-fabric"
   timeout    = 900
   set {
-    name = "service.type"
-    value = "NodePort"
+    name = "nginxGateway.config.logging.level"
+    value = "debug"
+  }
+  set {
+    name = "service.create"
+    value = "false"
   }
   ### the following is requiered to complete the config
   # 1. port forward
@@ -84,4 +86,31 @@ resource "helm_release" "nginx_gateway" {
   #   or
   #     /etc/hosts can be updated with 127.0.0.1 localhost cafe.example.com
   #     curl http://cafe.example.com:8080/tea
+}
+
+resource "kubernetes_service" "gateway" {
+  metadata {
+    name     = "${helm_release.nginx_gateway.name}-${helm_release.nginx_gateway.chart}"
+#    name      = "ngf-nginx-gateway-fabric"
+    namespace = local.namespace
+  }
+  spec {
+    type = "NodePort"
+    selector = {
+      "app.kubernetes.io/instance" = helm_release.nginx_gateway.name
+      "app.kubernetes.io/name"     = helm_release.nginx_gateway.chart
+    }
+    port {
+        name       = "http"
+        port       = 80
+        target_port = 80
+        node_port = 30080
+    } 
+    port {
+        name       = "https"
+        port       = 443
+        target_port = 443
+        node_port = 30443
+    }
+  }
 }

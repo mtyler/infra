@@ -11,6 +11,14 @@ resource "helm_release" "loki" {
   namespace  = local.namespace
   set {
     name  = "grafana.enabled"
+    value = "false"
+  }
+  set {
+    name  = "fluentbit.enabled"
     value = "true"
+  }
+  set {
+    name  = "promtail.enabled"
+    value = "false"
   }
 }

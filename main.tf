@@ -57,6 +57,12 @@ module "gateway" {
     context = var.context
 }
 
+module "httproutes" {
+    source = "./modules/httproutes"
+    context = var.context
+    depends_on = [ module.gateway, module.monitoring ]
+}
+
 module "dashboard" {
     source = "./modules/dashboard"
     depends_on = [ module.gateway ]

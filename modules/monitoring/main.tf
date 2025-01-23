@@ -51,3 +51,4 @@ resource "helm_release" "prometheus" {
     value = "alertname = Watchdog"
   }
 }
+
