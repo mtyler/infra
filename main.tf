@@ -52,46 +52,29 @@ resource "kubernetes_persistent_volume" "local-pv" {
   }
 }
 
-resource "kubernetes_persistent_volume_claim" "local-pvc" {
-  metadata {
-    name = "local-pvc"
-  }
-  spec {
-    access_modes = ["ReadWriteOnce"]
-    resources {
-      requests = {
-        storage = "10Gi"
-      }
-    }
-    storage_class_name = "local-storage"
-  }
-  depends_on = [ kubernetes_namespace.logging ]
+module "gateway" {
+    source = "./modules/gateway"
+    context = var.context
 }
 
-#module "gateway" {
-#    source = "./modules/gateway"
-#    context = var.context
-#}
-#
-#module "dashboard" {
-#    source = "./modules/dashboard"
-#    depends_on = [ module.gateway ]
-#}
-#
-#module "monitoring" {
-#    source = "./modules/monitoring"
-#    depends_on = [ module.dashboard, module.gateway ]
-#    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
-#    slack_api_url = var.slack_api_url
-#}
+module "dashboard" {
+    source = "./modules/dashboard"
+    depends_on = [ module.gateway ]
+}
+
+module "monitoring" {
+    source = "./modules/monitoring"
+    depends_on = [ module.dashboard, module.gateway ]
+    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
+    slack_api_url = var.slack_api_url
+}
 
 module "logging" {
     source = "./modules/logging"
-#    depends_on = [ module.dashboard, module.gateway ]
-    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
+    depends_on = [ module.dashboard, module.gateway ]
 }
 
-#module "security" {
-#    source = "./modules/security"
-#    depends_on = [ module.dashboard, module.gateway ]
-#}
+module "security" {
+    source = "./modules/security"
+    depends_on = [ module.dashboard, module.gateway ]
+}
