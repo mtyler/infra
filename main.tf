@@ -1,6 +1,5 @@
 terraform {
     required_version = ">= 0.13"
-
 }
 
 provider "kubernetes" {
@@ -23,14 +22,15 @@ resource "kubernetes_persistent_volume" "local-pv" {
   }
   spec {
     capacity = {
-      storage = "1Gi"
+      storage = "10Gi"
     }
+    volume_mode = "Filesystem"
     persistent_volume_source {
         local {
             path = "/usr/data"
         }
     }
-    access_modes = ["ReadWriteMany"]
+    access_modes = ["ReadWriteOnce"]
     persistent_volume_reclaim_policy = "Retain"
     storage_class_name = "local-storage"
     node_affinity {
@@ -57,40 +57,41 @@ resource "kubernetes_persistent_volume_claim" "local-pvc" {
     name = "local-pvc"
   }
   spec {
-    access_modes = ["ReadWriteMany"]
+    access_modes = ["ReadWriteOnce"]
     resources {
       requests = {
-        storage = "1Gi"
+        storage = "10Gi"
       }
     }
     storage_class_name = "local-storage"
   }
+  depends_on = [ kubernetes_namespace.logging ]
 }
 
-module "gateway" {
-    source = "./modules/gateway"
-    context = var.context
-}
-
-module "dashboard" {
-    source = "./modules/dashboard"
-    depends_on = [ module.gateway ]
-}
-
-module "monitoring" {
-    source = "./modules/monitoring"
-    depends_on = [ module.dashboard, module.gateway ]
-    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
-    slack_api_url = var.slack_api_url
-}
+#module "gateway" {
+#    source = "./modules/gateway"
+#    context = var.context
+#}
+#
+#module "dashboard" {
+#    source = "./modules/dashboard"
+#    depends_on = [ module.gateway ]
+#}
+#
+#module "monitoring" {
+#    source = "./modules/monitoring"
+#    depends_on = [ module.dashboard, module.gateway ]
+#    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
+#    slack_api_url = var.slack_api_url
+#}
 
 module "logging" {
     source = "./modules/logging"
-    depends_on = [ module.dashboard, module.gateway ]
+#    depends_on = [ module.dashboard, module.gateway ]
     storage_class = kubernetes_storage_class.local-storage.metadata[0].name
 }
 
-module "security" {
-    source = "./modules/security"
-    depends_on = [ module.dashboard, module.gateway ]
-}
+#module "security" {
+#    source = "./modules/security"
+#    depends_on = [ module.dashboard, module.gateway ]
+#}
