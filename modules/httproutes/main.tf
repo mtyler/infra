@@ -96,3 +96,85 @@ resource "kubernetes_manifest" "http_route_grafana" {
     }
   }
 }
+
+resource "kubernetes_manifest" "http_route_prometheus" {
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind = "HTTPRoute"
+    metadata = {
+      name = "http-route-prometheus"
+      namespace = local.namespace
+    }
+    spec = {
+      parentRefs = [
+        {
+          name = "gateway"
+          sectionName = "http"
+        }
+      ]
+      hostnames = [
+        "prom.${local.hostname}"
+      ]
+      rules = [
+        {
+          matches = [
+            {
+              path = {
+                type = "PathPrefix"
+                value = "/"
+              }
+            }
+          ]
+          backendRefs = [
+            {
+              namespace = "monitoring"
+              name = "prometheus-kube-prometheus-prometheus"
+              port = 9090
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+
+resource "kubernetes_manifest" "http_route_alertmanager" {
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind = "HTTPRoute"
+    metadata = {
+      name = "http-route-alertmanager"
+      namespace = local.namespace
+    }
+    spec = {
+      parentRefs = [
+        {
+          name = "gateway"
+          sectionName = "http"
+        }
+      ]
+      hostnames = [
+        "alert.${local.hostname}"
+      ]
+      rules = [
+        {
+          matches = [
+            {
+              path = {
+                type = "PathPrefix"
+                value = "/"
+              }
+            }
+          ]
+          backendRefs = [
+            {
+              namespace = "monitoring"
+              name = "prometheus-kube-prometheus-alertmanager"
+              port = 9093
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
