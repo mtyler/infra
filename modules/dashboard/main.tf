@@ -1,7 +1,7 @@
 # Begin Dashboard setup
 resource "kubernetes_namespace" "namespace" {
   metadata {
-    name = "kubernetes-dashboard"
+    name = "dashboard"
   }
 }
 

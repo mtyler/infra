@@ -24,6 +24,12 @@ resource "kubernetes_manifest" "gateway" {
           "port" = 80
           "protocol" = "HTTP"
           "hostname" = "*.${local.hostname}"
+        },
+        {
+          "name" = "https"
+          "port" = 443
+          "protocol" = "HTTPS"
+          "hostname" = "*.${local.hostname}"
         }
       ]
     }
@@ -37,6 +43,32 @@ resource "kubernetes_manifest" "ReferenceGrant" {
     "metadata" = {
       "name" = "monitoring-grant"
       "namespace" = "monitoring"
+    }
+    "spec" = {
+      "from" = [
+        {
+          "group" = "gateway.networking.k8s.io"
+          "kind" = "HTTPRoute"
+          "namespace" = "gateway"
+        }
+      ]
+      "to" = [
+        {
+          "group" = ""
+          "kind" = "Service"
+        }
+      ]
+    }
+  }
+}
+
+resource "kubernetes_manifest" "ReferenceGrant_dashboard" {
+  manifest = {
+    "apiVersion" = "gateway.networking.k8s.io/v1beta1"
+    "kind" = "ReferenceGrant"
+    "metadata" = {
+      "name" = "dashboard-grant"
+      "namespace" = "dashboard"
     }
     "spec" = {
       "from" = [
@@ -171,6 +203,47 @@ resource "kubernetes_manifest" "http_route_alertmanager" {
               namespace = "monitoring"
               name = "prometheus-kube-prometheus-alertmanager"
               port = 9093
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+
+resource "kubernetes_manifest" "https_route_dashboard" {
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind = "HTTPRoute"
+    metadata = {
+      name = "https-route-dashboard"
+      namespace = local.namespace
+    }
+    spec = {
+      parentRefs = [
+        {
+          name = "gateway"
+          sectionName = "https"
+        }
+      ]
+      hostnames = [
+        "dash.${local.hostname}"
+      ]
+      rules = [
+        {
+          matches = [
+            {
+              path = {
+                type = "PathPrefix"
+                value = "/"
+              }
+            }
+          ]
+          backendRefs = [
+            {
+              namespace = "dashboard"
+              name = "kubernetes-dashboard-kong-proxy"
+              port = 443
             }
           ]
         }
