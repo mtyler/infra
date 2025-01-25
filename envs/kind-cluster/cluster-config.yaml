@@ -1,3 +1,6 @@
+# This configuration file is used to create a kind cluster (k8s running inside docker)
+# extra port mappings are added to the control-plane node to expose the NodePorts to 
+# ports 80 and 443 to the host machine
 apiVersion: kind.x-k8s.io/v1alpha4
 kind: Cluster
 nodes:

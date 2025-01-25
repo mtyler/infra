@@ -30,11 +30,6 @@ provider "kubectl" {
   config_context    = local.context
 }
 
-provider "kubernetes" {
-  config_path = "~/.kube/config"
-  config_context = local.context
-}
-
 # Install Gateway API 
 # details: https://gateway-api.sigs.k8s.io/guides/#install-standard-channel
 data "http" "gateway_api_crds" {

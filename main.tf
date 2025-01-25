@@ -1,5 +1,11 @@
 terraform {
     required_version = ">= 0.13"
+    required_providers {
+      kubernetes = {
+        source = "hashicorp/kubernetes"
+        version = ">=2.35.1"
+      }
+    }
 }
 
 provider "kubernetes" {
@@ -60,7 +66,8 @@ module "gateway" {
 module "httproutes" {
     source = "./modules/httproutes"
     context = var.context
-    depends_on = [ module.gateway, module.monitoring ]
+    hostname = var.domain
+    depends_on = [ module.gateway, module.monitoring, module.dashboard ]
 }
 
 module "dashboard" {

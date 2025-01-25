@@ -5,7 +5,7 @@ terraform {
 locals {
   context = var.context
   namespace = "gateway"
-  hostname = "k8s.local"
+  hostname = var.hostname
 }
 
 resource "kubernetes_manifest" "gateway" {
@@ -19,6 +19,13 @@ resource "kubernetes_manifest" "gateway" {
     "spec" = {
       "gatewayClassName" = "nginx"
       "listeners" = [
+        {
+          "name" = "http-cp1"
+          "port" = 80
+          "protocol" = "HTTP"
+          "hostname" = "cp1"
+          
+        },
         {
           "name" = "http"
           "port" = 80
