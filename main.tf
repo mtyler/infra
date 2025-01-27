@@ -47,8 +47,11 @@ resource "kubernetes_persistent_volume" "local-pv" {
             operator = "In"
             values = [
                 "cp1",
+                "cp2",
+                "cp3",
                 "n1",
                 "n2",
+                "n3",
                 "test-control-plane"
                 ]
           }
@@ -91,3 +94,4 @@ module "security" {
     source = "./modules/security"
     depends_on = [ module.dashboard, module.gateway ]
 }
+

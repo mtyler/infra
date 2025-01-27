@@ -50,5 +50,49 @@ resource "helm_release" "prometheus" {
     name = "alertmanager.config.route.routes[0].matchers[0]"
     value = "alertname = Watchdog"
   }
+  set {
+    name = "kubeEtcd.enabled"
+    value = "true"
+  }
+  set {
+    name = "kubeEtcd.service.enabled"
+    value = "true"
+  }
+  set {
+    name = "kubeEtcd.service.port"
+    value = "2381"
+  }
+  set {
+    name = "kubeEtcd.service.targetPort"
+    value = "2381"
+  }
 }
 
+###locals {
+###  user = "vagrant@cp2"
+###  pki_dir = "/etc/kubernetes/pki/etcd"
+###}
+###
+###data "external" "etcd_client_ca_crt" {
+###  program = ["sh", "-c", "ssh ${local.user} 'cat ${local.pki_dir}/etcd-client-ca.crt'"]
+###}
+###
+###data "external" "etcd_client_crt" {
+###  program = ["sh", "-c", "ssh ${local.user} 'cat ${local.pki_dir}/etcd-client.crt'"]
+###}
+###
+###data "external" "etcd_client_key" {
+###  program = ["sh", "-c", "ssh ${local.user} 'cat ${local.pki_dir}/etcd-client.key'"]
+###}
+###
+###resource "kubernetes_secret" "etcd-certs" {
+###  metadata {
+###    name      = "etcd-certs"
+###    namespace = "monitoring"
+###  }
+###  data = {
+###    "etcd-client-ca.crt" = data.external.etcd_client_ca_crt.result["output"]
+###    "etcd-client.crt"    = data.external.etcd_client_crt.result["output"]
+###    "etcd-client.key"    = data.external.etcd_client_key.result["output"]
+###  }
+###}
