@@ -13,53 +13,14 @@ provider "kubernetes" {
     config_context = var.context
 }
 
-resource "kubernetes_storage_class" "local-storage" {
-  metadata {
-    name = "local-storage"
-  }
-  storage_provisioner = "kubernetes.io/no-provisioner"
-  reclaim_policy = "Retain"
-  volume_binding_mode = "WaitForFirstConsumer"
-}
-
-resource "kubernetes_persistent_volume" "local-pv" {
-  metadata {
-    name = "local-pv"
-  }
-  spec {
-    capacity = {
-      storage = "10Gi"
-    }
-    volume_mode = "Filesystem"
-    persistent_volume_source {
-        local {
-            path = "/usr/data"
-        }
-    }
-    access_modes = ["ReadWriteOnce"]
-    persistent_volume_reclaim_policy = "Retain"
-    storage_class_name = "local-storage"
-    node_affinity {
-      required {
-        node_selector_term {
-          match_expressions {
-            key = "kubernetes.io/hostname"
-            operator = "In"
-            values = [
-                "cp1",
-                "cp2",
-                "cp3",
-                "n1",
-                "n2",
-                "n3",
-                "test-control-plane"
-                ]
-          }
-        }
-      }
-    }
-  }
-}
+#resource "kubernetes_storage_class" "local-storage" {
+#  metadata {
+#    name = "local-storage"
+#  }
+#  storage_provisioner = "kubernetes.io/no-provisioner"
+#  reclaim_policy = "Retain"
+#  volume_binding_mode = "WaitForFirstConsumer"
+#}
 
 module "gateway" {
     source = "./modules/gateway"
@@ -73,6 +34,10 @@ module "httproutes" {
     depends_on = [ module.gateway, module.monitoring, module.dashboard ]
 }
 
+module "storage" {
+    source = "./modules/storage"
+}
+
 module "dashboard" {
     source = "./modules/dashboard"
     depends_on = [ module.gateway ]
@@ -81,7 +46,8 @@ module "dashboard" {
 module "monitoring" {
     source = "./modules/monitoring"
     depends_on = [ module.dashboard, module.gateway ]
-    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
+#    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
+    storage_class = module.storage.storage_class
     slack_api_url = var.slack_api_url
 }
 
@@ -90,8 +56,14 @@ module "logging" {
     depends_on = [ module.dashboard, module.gateway ]
 }
 
-module "security" {
-    source = "./modules/security"
-    depends_on = [ module.dashboard, module.gateway ]
-}
+#module "security" {
+#    source = "./modules/security"
+#    depends_on = [ module.dashboard, module.gateway ]
+#}
+
+#module "kubescape" {
+#    source = "./modules/kubescape"
+#    storage_class = module.storage.storage_class
+#    depends_on = [ module.storage, module.dashboard, module.gateway ]
+#}
 
