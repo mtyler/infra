@@ -8,7 +8,6 @@ terraform {
 }
 
 locals {
-#  context = var.context
   namespace = "gateway"
 }
 
