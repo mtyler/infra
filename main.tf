@@ -1,11 +1,28 @@
 terraform {
     required_version = ">= 0.13"
+    
     required_providers {
+      kubectl = {
+        source = "gavinbunney/kubectl"
+        version = ">=1.19.0"
+      }
+      helm = {
+        source = "hashicorp/helm"
+        version = ">=2.17.0"
+      }
       kubernetes = {
         source = "hashicorp/kubernetes"
         version = ">=2.35.1"
       }
+      http = {
+        source = "hashicorp/http"
+      }
     }
+}
+
+provider "kubectl" {
+  load_config_file  = true
+  config_context    = var.context
 }
 
 provider "kubernetes" {
@@ -13,29 +30,18 @@ provider "kubernetes" {
     config_context = var.context
 }
 
-#resource "kubernetes_storage_class" "local-storage" {
-#  metadata {
-#    name = "local-storage"
-#  }
-#  storage_provisioner = "kubernetes.io/no-provisioner"
-#  reclaim_policy = "Retain"
-#  volume_binding_mode = "WaitForFirstConsumer"
-#}
+module "storage" {
+    source = "./modules/storage"
+}
 
 module "gateway" {
     source = "./modules/gateway"
-    context = var.context
 }
 
-module "httproutes" {
-    source = "./modules/httproutes"
-    context = var.context
+module "gateway-routes" {
+    source = "./modules/gateway-routes"
     hostname = var.domain
     depends_on = [ module.gateway, module.monitoring, module.dashboard ]
-}
-
-module "storage" {
-    source = "./modules/storage"
 }
 
 module "dashboard" {
@@ -51,19 +57,8 @@ module "monitoring" {
     slack_api_url = var.slack_api_url
 }
 
-module "logging" {
-    source = "./modules/logging"
+module "security" {
+    source = "./modules/security"
     depends_on = [ module.dashboard, module.gateway ]
 }
-
-#module "security" {
-#    source = "./modules/security"
-#    depends_on = [ module.dashboard, module.gateway ]
-#}
-
-#module "kubescape" {
-#    source = "./modules/kubescape"
-#    storage_class = module.storage.storage_class
-#    depends_on = [ module.storage, module.dashboard, module.gateway ]
-#}
 

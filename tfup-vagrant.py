@@ -3,6 +3,7 @@ import argparse
 import shutil
 
 def clean_tf():
+    # Remove terraform stateful objects
     objs = ['.terraform', '.terraform.lock.hcl', 'terraform.tfstate', 'terraform.tfstate.backup']
     for obj in objs:
         if os.path.exists(obj):
@@ -12,6 +13,7 @@ def clean_tf():
                 os.remove(obj)
 
 def rollout(tf_args):
+    # Use tofu to plan and apply tf scripts
     plan_command = 'source .env && tofu plan -concise {}'.format(tf_args)
     plan_result = os.system(plan_command)
     if plan_result != 0:
@@ -22,12 +24,15 @@ def rollout(tf_args):
 def converge(args):
     # intialize tofu
     os.system('tofu init')
+
     # plan and apply the gateway module to lay down CRDs
     # https://github.com/hashicorp/terraform-provider-kubernetes/issues/1367
     if args.crdprep:
+         print("Apply Gateway module to populate CRDs")
          rollout(f"-var=context={args.context} -target=module.gateway")
+         print("Run monkeypatch...")
+         os.system("python3 ./monkeypatch/kubeProxy-metricsBindAddress.py")
 
-    print("Gateway module applied with CRDs")
     rollout(f"-var=context={args.context}")
 
 def main():

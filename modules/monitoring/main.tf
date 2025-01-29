@@ -67,3 +67,12 @@ resource "helm_release" "prometheus" {
     value = "2381"
   }
 }
+
+#resource "helm_release" "jaegertracing" {
+#  create_namespace = true
+#  name       = "jaegertracing"
+#  repository = "https://jaegertracing.github.io/helm-charts"
+#  chart      = "jaegertracing"
+#  namespace  = local.namespace
+#  
+#}

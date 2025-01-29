@@ -1,34 +1,17 @@
 terraform {
   required_version = ">= 0.13"
-
   required_providers {
-    kubectl = {
-      source = "gavinbunney/kubectl"
-      version = "1.19.0"
-    }
-    helm = {
-      source = "hashicorp/helm"
-      version = "2.17.0"
-    }
-    kubernetes = {
-      source = "hashicorp/kubernetes"
-      version = "2.35.1"
-    }
-    http = {
-      source = "hashicorp/http"
-    }
-  }
+      kubectl = {
+        source = "gavinbunney/kubectl"
+      }
+  }  
 }
 
 locals {
-  context = var.context
+#  context = var.context
   namespace = "gateway"
 }
 
-provider "kubectl" {
-  load_config_file  = true
-  config_context    = local.context
-}
 
 # Install Gateway API 
 # details: https://gateway-api.sigs.k8s.io/guides/#install-standard-channel

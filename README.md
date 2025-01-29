@@ -3,14 +3,21 @@
 
 ### Alert setup
 
-run the following command from the controlplane node.
+This is required to allow the kubeProxy to share stats with Prometheus
 
-kubectl create secret generic etcd-certs -n monitoring 
---from-literal=ca.crt="$(cat /etc/kubernetes/pki/etcd/ca.crt)" 
---from-literal=healthcheck-client.crt="$(sudo cat /etc/kubernetes/pki/etcd/healthcheck-client.crt)" --from-literal=healthcheck-client.key="$(sudo cat /etc/kubernetes/pki/etcd/healthcheck-client.key)"
+- kubectl edit configmaps -n kube-system kube-proxy 
 
-kubectl create secret generic etcd-client-cert -n monitoring --from-literal=caFile="$(cat /etc/kubernetes/pki/etcd/ca.crt)" --from-literal=certFile="$(sudo cat /etc/kubernetes/pki/etcd/healthcheck-client.crt)" --from-literal=keyFile="$(sudo cat /etc/kubernetes/pki/etcd/healthcheck-client.key)"
+change: 
+
+- metricsBindAddress: "" 
+
+to: 
+
+- metricsBindAddress: 0.0.0.0:10249
+
+see: ./monkeypatch/kubeProxy-metricsBindAddress.py
+
+## Monitoring by hand
 
 
-k edit configmaps -n kube-system kube-proxy
-metricsBindAddress: 0.0.0.0:10249
+kubectl logs -n gateway -l app.kubernetes.io/name=nginx-gateway-fabric -c nginx

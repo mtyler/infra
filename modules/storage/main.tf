@@ -48,9 +48,35 @@ resource "kubernetes_storage_class" "csi-nfs" {
     subDir = ""
     mountPermissions: "0"
   }
-  storage_provisioner = "kubernetes.io/no-provisioner"
+  storage_provisioner = "nfs.csi.k8s.io"
   reclaim_policy = "Retain"
-  volume_binding_mode = "WaitForFirstConsumer"
+  volume_binding_mode = "Immediate"
   mount_options = ["nfsvers=4.1"]
+  allow_volume_expansion = "true"
   depends_on = [ helm_release.csi-driver-nfs ]
 }
+
+#resource "kubernetes_persistent_volume" "csi-nfs-pv" {
+#  metadata {
+#    name = "csi-nfs-pv"
+#  }
+#  spec {
+#    capacity = "10Gi"
+#    access_modes = [ "ReadWriteMany" ]
+#    persistent_volume_reclaim_policy = "Retain"
+#    persistent_volume_source {
+#      csi {
+#        driver = "nfs.csi.k8s.io"
+#        # volumeHandle format: {nfs-server-address}#{sub-dir-name}#{share-name}
+#        # make sure this value is unique for every share in the cluster
+#        volume_handle = "10.0.0.11/var/nfs/k8s-cluster"
+#        volume_attributes = {
+#          server = "10.0.0.11"
+#          share = "/var/nfs/k8s-cluster"
+#        }
+#      }
+#    } 
+#    storage_class_name = "csi-nfs"
+#    mount_options = [ "nfsvers=4.1" ]
+#  }
+#}

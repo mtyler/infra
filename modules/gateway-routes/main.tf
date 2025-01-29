@@ -43,7 +43,8 @@ resource "kubernetes_manifest" "gateway" {
   }
 }
 
-resource "kubernetes_manifest" "ReferenceGrant" {
+# Allow resources from ns: gateway to reach ns: monitoring
+resource "kubernetes_manifest" "ReferenceGrant_monitoring" {
   manifest = {
     "apiVersion" = "gateway.networking.k8s.io/v1beta1"
     "kind" = "ReferenceGrant"
@@ -69,6 +70,7 @@ resource "kubernetes_manifest" "ReferenceGrant" {
   }
 }
 
+# Allow resources from ns: gateway to reach ns: dashboard
 resource "kubernetes_manifest" "ReferenceGrant_dashboard" {
   manifest = {
     "apiVersion" = "gateway.networking.k8s.io/v1beta1"
@@ -94,33 +96,6 @@ resource "kubernetes_manifest" "ReferenceGrant_dashboard" {
     }
   }
 }
-
-#resource "kubernetes_manifest" "ReferenceGrant_security" {
-#  manifest = {
-#    "apiVersion" = "gateway.networking.k8s.io/v1beta1"
-#    "kind" = "ReferenceGrant"
-#    "metadata" = {
-#      "name" = "security-grant"
-#      "namespace" = "security"
-#    }
-#    "spec" = {
-#      "from" = [
-#        {
-#          "group" = "gateway.networking.k8s.io"
-#          "kind" = "HTTPRoute"
-#          "namespace" = "gateway"
-#        }
-#      ]
-#      "to" = [
-#        {
-#          "group" = ""
-#          "kind" = "Service"
-#        }
-#      ]
-#    }
-#  }
-#}
-
 
 resource "kubernetes_manifest" "http_route_grafana" {
   manifest = {
@@ -245,46 +220,46 @@ resource "kubernetes_manifest" "http_route_alertmanager" {
   }
 }
 
-#resource "kubernetes_manifest" "http_route_security" {
-#  manifest = {
-#    apiVersion = "gateway.networking.k8s.io/v1"
-#    kind = "HTTPRoute"
-#    metadata = {
-#      name = "http-route-security"
-#      namespace = local.namespace
-#    }
-#    spec = {
-#      parentRefs = [
-#        {
-#          name = "gateway"
-#          sectionName = "http"
-#        }
-#      ]
-#      hostnames = [
-#        "sec.${local.hostname}"
-#      ]
-#      rules = [
-#        {
-#          matches = [
-#            {
-#              path = {
-#                type = "PathPrefix"
-#                value = "/"
-#              }
-#            }
-#          ]
-#          backendRefs = [
-#            {
-#              namespace = "security"
-#              name = "falco-falcosidekick-ui"
-#              port = 2802
-#            }
-#          ]
-#        }
-#      ]
-#    }
-#  }
-#}
+resource "kubernetes_manifest" "http_route_security" {
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind = "HTTPRoute"
+    metadata = {
+      name = "http-route-security"
+      namespace = local.namespace
+    }
+    spec = {
+      parentRefs = [
+        {
+          name = "gateway"
+          sectionName = "http"
+        }
+      ]
+      hostnames = [
+        "sec.${local.hostname}"
+      ]
+      rules = [
+        {
+          matches = [
+            {
+              path = {
+                type = "PathPrefix"
+                value = "/"
+              }
+            }
+          ]
+          backendRefs = [
+            {
+              namespace = "monitoring"
+              name = "falco-falcosidekick"
+              port = 2810
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
 
 resource "kubernetes_manifest" "https_route_dashboard" {
   manifest = {
