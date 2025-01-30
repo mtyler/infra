@@ -78,27 +78,6 @@ resource "helm_release" "prometheus" {
   }
 }
 
-#resource "kubernetes_persistent_volume" "testing-pv" {
-#  metadata {
-#    name = "testing-pv"
-#  }
-#  spec {
-#    capacity = {
-#      storage = "1Gi"
-#    }
-#    volume_mode = "Filesystem"
-#    persistent_volume_source {
-#        # TODO get path dynamically/pass in
-#        local {
-#            path = "/nfs/k8s-cluster-pvs"
-#        }
-#    }
-#    access_modes = ["ReadWriteOnce"]
-#    persistent_volume_reclaim_policy = "Retain"
-#    storage_class_name = var.storage_class
-#  }
-#}
-
 resource "helm_release" "falco" {
   create_namespace = true
   atomic           = true
@@ -108,19 +87,121 @@ resource "helm_release" "falco" {
   chart      = "falco"
   namespace  = var.namespace
   set {
-    name = "driver.kind"
-    value = "modern_ebpf"
+    name = "driver.enabled"
+    value = "false"
   }
   set {
-    name = "tty"
+    name = "collecotors.enabled"
+    value = "false"
+  }
+  set {
+    name = "controller.kind"
+    value = "deployment"
+  }
+  set {
+    name = "controller.deployment.replicas"
+    value = "1"
+  }
+  set {
+    name = "falcoctl.artifact.install.enabled"
     value = "true"
   }
+  set {
+    name = "falcoctl.artifact.follow.enabled"
+    value = "true"
+  }
+  set {
+    name = "falcoctl.config.artifact.install.refs[0]"
+    value = "k8saudit-rules:0.11"
+  }
+  set {
+    name = "falcoctl.config.artifact.install.refs[1]"
+    value = "k8saudit:0.11"
+  }
+  set {
+    name = "falcoctl.config.artifact.follow.refs[0]"
+    value = "k8saudit-rules:0.11"
+  }
+  set {
+    name = "services[0].name"
+    value = "k8saudit-webhook"
+  }
+  set {
+    name = "services[0].type"
+    value = "NodePort"
+  }
+  set {
+    name = "services[0].ports[0].port"
+    value = "9765"
+  }
+  set {
+    name = "services[0].ports[0].nodePort"
+    value = "30007"
+  }
+  set {
+    name = "services[0].ports[0].protocol"
+    value = "TCP"
+  }
+  set {
+    name = "falco.rules_files[0]"
+    value = "/etc/falco/k8s_audit_rules.yaml"
+  }
+  set {
+    name = "falco.rules_files[1]"
+    value = "/etc/falco/rules.d"
+  }
+  set {
+    name = "falco.plugins[0].name"
+    value = "k8saudit"
+  }
+  set {
+    name = "falco.plugins[0].library_path"
+    value = "libk8saudit.so"
+  }
+  set {
+    name = "falco.plugins[0].lib_config"
+    value = "''"
+  }
+  set {
+    name = "falco.plugins[0].open_params"
+    value = "http://:9765/k8s-audit"
+  }
+  set {
+    name = "falco.plugins[1].name"
+    value = "json"
+  }
+  set {
+    name = "falco.plugins[1].library_path"
+    value = "libjson.so"
+  }
+  set {
+    name = "falco.plugins[1].init_config"
+    value = ""
+  }
+  set {
+    name = "falco.load_plugins[0]"
+    value = "k8saudit"
+  }
+    set {
+    name = "falco.load_plugins[1]"
+    value = "json"
+  }
+  # uncomment to enable real-time detection/alerting
+  #set {
+  #  name = "tty"
+  #  value = "true"
+  #}
   set {
     name = "metrics.enabled"
     value = "true"
   }
   set {
     name = "serviceMonitor.create"
+    value = "true"
+  }
+  # enables the k8smetacollector plugin
+  set {
+    name = "collectors.enabled"
     value = "true"
   }
   set {
@@ -132,14 +213,14 @@ resource "helm_release" "falco" {
     name = "grafana.dashboards.enabled"
     value = "true"
   }
-  set {
-    name = "grafana.dashboards.configMaps.falco.namespace"
-    value = "monitoring"
-  }
-  set {
-    name = "grafana.dashboards.configMaps.falco.folder"
-    value = "security"
-  }
+  #set {
+  #  name = "grafana.dashboards.configMaps.falco.namespace"
+  #  value = "monitoring"
+  #}
+  #set {
+  #  name = "grafana.dashboards.configMaps.falco.folder"
+  #  value = "security"
+  #}
   # falcosidekick
   set {
     name = "falcosidekick.enabled"
@@ -171,6 +252,28 @@ resource "helm_release" "falco" {
   }
 #  depends_on = [ kubernetes_persistent_volume.monitoring-pv ]
 }
+
+#resource "helm_release" "falco-k8s-metacollector" {
+#  create_namespace = true
+#  atomic           = true
+#  cleanup_on_fail  = true
+#  name       = "k8s-metacollector"
+#  repository = "https://falcosecurity.github.io/charts"
+#  chart      = "k8s-metacollector"
+#  namespace = var.namespace
+#  set {
+#    name = "serviceMonitor.create"
+#    value = "true"
+#  }
+#  set {
+#    name = "serviceMonitor.labels.release"
+#    value = "kube-prometheus-stack"
+#  }
+#  set {
+#    name = "grafana.dashboards.enabled"
+#    value = "true"
+#  }
+#}
 
 #resource "helm_release" "jaegertracing" {
 #  create_namespace = true
