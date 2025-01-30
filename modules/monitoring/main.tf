@@ -86,6 +86,8 @@ resource "helm_release" "falco" {
   repository = "https://falcosecurity.github.io/charts"
   chart      = "falco"
   namespace  = var.namespace
+  # k8saudit values derived from defaults established in the helm chart
+  # https://github.com/falcosecurity/charts/blob/master/charts/falco/values-k8saudit.yaml
   set {
     name = "driver.enabled"
     value = "false"
@@ -250,30 +252,7 @@ resource "helm_release" "falco" {
     name = "falcosidekick.config.slack.webhookurl"
     value = var.slack_api_url
   }
-#  depends_on = [ kubernetes_persistent_volume.monitoring-pv ]
 }
-
-#resource "helm_release" "falco-k8s-metacollector" {
-#  create_namespace = true
-#  atomic           = true
-#  cleanup_on_fail  = true
-#  name       = "k8s-metacollector"
-#  repository = "https://falcosecurity.github.io/charts"
-#  chart      = "k8s-metacollector"
-#  namespace = var.namespace
-#  set {
-#    name = "serviceMonitor.create"
-#    value = "true"
-#  }
-#  set {
-#    name = "serviceMonitor.labels.release"
-#    value = "kube-prometheus-stack"
-#  }
-#  set {
-#    name = "grafana.dashboards.enabled"
-#    value = "true"
-#  }
-#}
 
 #resource "helm_release" "jaegertracing" {
 #  create_namespace = true
