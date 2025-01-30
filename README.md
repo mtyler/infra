@@ -1,4 +1,9 @@
 
+## Usage
+
+1. ensure you have created a .env file in the root of the repository and it should have the following values
+
+- export TF_VAR_slack_api_url="https://hooks.slaxxxREPLACExWITHxYOURxHOOKxx/xxxxxvzJ"
 
 
 ### Alert setup
