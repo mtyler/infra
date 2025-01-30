@@ -9,14 +9,14 @@ resource "helm_release" "prometheus" {
   # uncomment to enable persistent volume using storage class
   # !! currently failing when trying to chown the shared volume
   # !! need to investigate further
-  ##set {
-  ##  name  = "grafana.persistence.enabled"
-  ##  value = "true"
-  ##}
-  ##set {
-  ##  name  = "grafana.persistence.storageClassName"
-  ##  value = var.storage_class_name
-  ##}
+  set {
+    name  = "grafana.persistence.enabled"
+    value = "true"
+  }
+  set {
+    name  = "grafana.persistence.storageClassName"
+    value = var.storage_class_name
+  }
 
   # uncomment to enable persistent volume on hostpath
   ##set {
@@ -32,13 +32,14 @@ resource "helm_release" "prometheus" {
   ##  name  = "server.persistentVolume.size"
   ##  value = "1Gi"
   ##}
+
   set {
     name =  "alertmanager.config.receivers[0].name"
     value = "slack"
   }
   set {
     name =  "alertmanager.config.receivers[0].slack_configs[0].channel"
-    value = "#alertmanager"
+    value = var.slack_channel
   } 
   set {
     name =  "alertmanager.config.receivers[0].slack_configs[0].api_url"

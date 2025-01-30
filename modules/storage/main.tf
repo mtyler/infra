@@ -44,48 +44,22 @@ resource "helm_release" "csi-driver-nfs" {
     name = "storageClass.mount_options"
     value = "['nfsver=4.1']"
   }
+  set {
+    name = "storageClass.volumeBindingMode"
+    value = "WaitForFirstConsumer"
+  }
   depends_on = [ kubernetes_namespace.storage ]
 }
 
-#resource "kubernetes_storage_class" "csi-nfs" {
-#  metadata {
-#    name = "csi-nfs"
-#  }
-#  parameters = {
-#    server = "10.0.0.11"
-#    share  = "/nfs/k8s-cluster-pvs"
-#    subDir = ""
-#    mountPermissions: "0"
-#  }
-#  storage_provisioner = "nfs.csi.k8s.io"
-#  reclaim_policy = "Retain"
-#  volume_binding_mode = "Immediate"
-#  mount_options = ["nfsvers=4.1"]
-#  allow_volume_expansion = "true"
-#  depends_on = [ helm_release.csi-driver-nfs ]
-#}
-
-#resource "kubernetes_persistent_volume" "csi-nfs-pv" {
-#  metadata {
-#    name = "csi-nfs-pv"
-#  }
-#  spec {
-#    capacity = "10Gi"
-#    access_modes = [ "ReadWriteMany" ]
-#    persistent_volume_reclaim_policy = "Retain"
-#    persistent_volume_source {
-#      csi {
-#        driver = "nfs.csi.k8s.io"
-#        # volumeHandle format: {nfs-server-address}#{sub-dir-name}#{share-name}
-#        # make sure this value is unique for every share in the cluster
-#        volume_handle = "10.0.0.11/nfs/k8s-cluster-pvs"
-#        volume_attributes = {
-#          server = "10.0.0.11"
-#          share = "/nfs/k8s-cluster-pvs"
-#        }
-#      }
-#    } 
-#    storage_class_name = "csi-nfs"
-#    mount_options = [ "nfsvers=4.1" ]
-#  }
-#}
+# update the default storage class to the new NFS storage class
+resource "kubernetes_annotations" "csi-driver-nfs-storage-class" {
+  api_version = "storage.k8s.io/v1"
+  kind        = "StorageClass"
+  metadata {
+    name = var.storage_class_name
+  }
+  annotations = {
+    "storageclass.kubernetes.io/is-default-class" = "true"
+  }
+  depends_on = [ helm_release.csi-driver-nfs ]
+}

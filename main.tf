@@ -61,4 +61,5 @@ module "monitoring" {
     depends_on = [ module.dashboard, module.gateway, module.storage ]
     storage_class_name = module.storage.storage_class_name
     slack_api_url = var.slack_api_url
+    slack_channel = "#alertmanager"
 }

@@ -12,3 +12,7 @@ variable "slack_api_url" {
   sensitive = true
 }
 
+variable "slack_channel" {
+  description = "Slack channel to be used for alertmanager"
+  default = "#alertmanager"
+}
