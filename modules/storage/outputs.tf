@@ -1,4 +1,4 @@
-output "storage_class" {
+output "storage_class_name" {
   description = "The storage class created by this module"
-  value = resource.kubernetes_storage_class.csi-nfs.metadata.0.name
+  value = var.storage_class_name
 }

@@ -1,4 +1,9 @@
-variable "storage_class" {
+variable "namespace" {
+  description = "The namespace to use for this module"
+  default = "monitoring"
+}
+
+variable "storage_class_name" {
   description = "Storage class to be used for persistent volumes"
 }
 

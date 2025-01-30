@@ -250,8 +250,8 @@ resource "kubernetes_manifest" "http_route_security" {
           backendRefs = [
             {
               namespace = "monitoring"
-              name = "falco-falcosidekick"
-              port = 2810
+              name = "falcosecurity-falcosidekick-ui"
+              port = 2802
             }
           ]
         }

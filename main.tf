@@ -20,6 +20,11 @@ terraform {
     }
 }
 
+locals {
+    nfs_share         = "/nfs/k8s-cluster-pvs"
+    nfs_server        = "10.0.0.11"
+}
+
 provider "kubectl" {
   load_config_file  = true
   config_context    = var.context
@@ -32,6 +37,8 @@ provider "kubernetes" {
 
 module "storage" {
     source = "./modules/storage"
+    nfs_share = local.nfs_share
+    nfs_server = local.nfs_server
 }
 
 module "gateway" {
@@ -51,14 +58,7 @@ module "dashboard" {
 
 module "monitoring" {
     source = "./modules/monitoring"
-    depends_on = [ module.dashboard, module.gateway ]
-#    storage_class = kubernetes_storage_class.local-storage.metadata[0].name
-    storage_class = module.storage.storage_class
+    depends_on = [ module.dashboard, module.gateway, module.storage ]
+    storage_class_name = module.storage.storage_class_name
     slack_api_url = var.slack_api_url
 }
-
-module "security" {
-    source = "./modules/security"
-    depends_on = [ module.dashboard, module.gateway ]
-}
-
