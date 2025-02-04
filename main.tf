@@ -21,6 +21,8 @@ terraform {
 }
 
 locals {
+    # strorage_type options: nfs, local-path, topolvm, lpp
+    storage_type      = "lpp"
     nfs_share         = "/nfs/k8s-cluster-pvs"
     nfs_server        = "10.0.0.11"
 }
@@ -35,7 +37,51 @@ provider "kubernetes" {
     config_context = var.context
 }
 
+resource "kubernetes_storage_class" "local_path" {
+  # This resource is only created if the storage type is local-path
+  count = local.storage_type == "local-path" ? 1 : 0
+  metadata {
+    name = "local-path"
+  }
+  storage_provisioner = "kubernetes.io/no-provisioner"
+  reclaim_policy = "Delete"
+  volume_binding_mode = "WaitForFirstConsumer"
+}
+
+# Install the cert-manager helm chart
+resource "helm_release" "cert_manager" {
+  create_namespace = true
+  namespace = "cert-manager"
+  chart = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  name = "cert-manager"
+  set {
+    name = "crds.enabled"
+    value = "true"
+  }
+}
+
+# Install the metrics-server helm chart
+# cli: command = ["/metrics-server", "--cert-dir=/tmp", "--secure-port=10250", "--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname", "--kubelet-use-node-status-port", "--metric-resolution=15s", "--kubelet-insecure-tls"]
+resource "helm_release" "metrics_server" {
+  namespace = "kube-system"
+  chart = "metrics-server"
+  repository = "https://kubernetes-sigs.github.io/metrics-server"
+  name = "metrics-server"
+  set {
+    name = "metrics.enabled"
+    value = "true"
+  }
+  set {
+    name = "args[0]"
+    value = "--kubelet-insecure-tls"
+  }
+}
+
 module "storage" {
+    # This module is meant to supprt storage type = nfs
+#    storage_type = local.storage_type == "nfs" ? 1 : 0
+    storage_type = local.storage_type
     source = "./modules/storage"
     nfs_share = local.nfs_share
     nfs_server = local.nfs_server

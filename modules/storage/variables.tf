@@ -1,3 +1,6 @@
+variable "storage_type" {
+  description = "The type of storage to setup for the cluster"
+}
 variable "nfs_share" {
   description = "The directory of the nfs share drive"
 }
