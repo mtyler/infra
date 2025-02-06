@@ -21,8 +21,8 @@ terraform {
 }
 
 locals {
-    # strorage_type options: nfs, local-path, topolvm, lpp
-    storage_type      = "lpp"
+    # strorage_type options: nfs, local-path, topolvm
+    storage_type      = "rook-ceph"
     nfs_share         = "/nfs/k8s-cluster-pvs"
     nfs_server        = "10.0.0.11"
 }
@@ -46,19 +46,6 @@ resource "kubernetes_storage_class" "local_path" {
   storage_provisioner = "kubernetes.io/no-provisioner"
   reclaim_policy = "Delete"
   volume_binding_mode = "WaitForFirstConsumer"
-}
-
-# Install the cert-manager helm chart
-resource "helm_release" "cert_manager" {
-  create_namespace = true
-  namespace = "cert-manager"
-  chart = "cert-manager"
-  repository = "https://charts.jetstack.io"
-  name = "cert-manager"
-  set {
-    name = "crds.enabled"
-    value = "true"
-  }
 }
 
 # Install the metrics-server helm chart
@@ -85,27 +72,32 @@ module "storage" {
     source = "./modules/storage"
     nfs_share = local.nfs_share
     nfs_server = local.nfs_server
+    depends_on = [ module.cert_manager ]
 }
 
 module "gateway" {
     source = "./modules/gateway"
 }
 
-module "gateway-routes" {
-    source = "./modules/gateway-routes"
-    hostname = var.domain
-    depends_on = [ module.gateway, module.monitoring, module.dashboard ]
+module "cert_manager" {
+    source = "./modules/cert-manager"
 }
 
-module "dashboard" {
-    source = "./modules/dashboard"
-    depends_on = [ module.gateway ]
-}
+#module "gateway-routes" {
+#    source = "./modules/gateway-routes"
+#    hostname = var.domain
+#    depends_on = [ module.gateway, module.monitoring, module.dashboard ]
+#}
 
-module "monitoring" {
-    source = "./modules/monitoring"
-    depends_on = [ module.dashboard, module.gateway, module.storage ]
-    storage_class_name = module.storage.storage_class_name
-    slack_api_url = var.slack_api_url
-    slack_channel = "#alertmanager"
-}
+#module "dashboard" {
+#    source = "./modules/dashboard"
+#    depends_on = [ module.gateway ]
+#}
+
+#module "monitoring" {
+#    source = "./modules/monitoring"
+#    depends_on = [ module.dashboard, module.gateway, module.storage ]
+#    storage_class_name = module.storage.storage_class_name
+#    slack_api_url = var.slack_api_url
+#    slack_channel = "#alertmanager"
+#}

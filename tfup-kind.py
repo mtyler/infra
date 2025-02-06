@@ -1,3 +1,5 @@
+#!/opt/homebrew/bin/python3
+
 import os
 import argparse
 import shutil
