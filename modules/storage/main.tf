@@ -39,7 +39,7 @@ resource "helm_release" "rook-ceph-operator" {
     value = "true"
   }
 }
-
+# Install the Rook Ceph Cluster
 resource "helm_release" "rook-ceph-cluster" {
   count = var.storage_type == "rook-ceph" ? 1 : 0
   namespace = var.namespace
@@ -53,24 +53,24 @@ resource "helm_release" "rook-ceph-cluster" {
   set {
     # mon.count should be set to a min of 3 for production
     name = "cephClusterSpec.mon.count"
-    value = "1"
+    value = "3"
   }
   set {
     # mgr.count should be set to 2 for production
     name = "cephClusterSpec.mgr.count"
-    value = "1"
+    value = "2"
   }
-  set {
-    # turn off Block Pools 
-    name = "cephBlockPools[0]"
-    value = ""
-  }
-  set {
-    # turn off CephFS
-    name = "cephFilesystems[0]"
-    value = ""
-  }
-
+  #set {
+  #  # turn off Block Pools 
+  #  name = "cephBlockPools[0]"
+  #  value = "[]"
+  #}
+  #set {
+  #  # turn off CephFS
+  #  name = "cephFilesystems[0]"
+  #  value = "[]"
+  #}
+  depends_on = [ helm_release.rook-ceph-operator ]
 }
 
 
