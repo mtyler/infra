@@ -11,27 +11,27 @@ locals {
   namespace = "gateway"
 }
 
-
-# Install Gateway API 
-# details: https://gateway-api.sigs.k8s.io/guides/#install-standard-channel
-data "http" "gateway_api_crds" {
-  url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml"
-
-  request_headers = {
-    Accept = "application/yaml"
-  }
-}
-
-data "kubectl_file_documents" "gateway_api_crds" {
-    content = data.http.gateway_api_crds.response_body
-}
-
-# Using data.http.gateway_api_install.response_body directly in kubectl_manifest
-# results in only the first manifest being applied.
-resource "kubectl_manifest" "gateway_api_crds" {
-    for_each  = data.kubectl_file_documents.gateway_api_crds.manifests
-    yaml_body = each.value
-}
+## attempt tp move to an init module
+## Install Gateway API 
+## details: https://gateway-api.sigs.k8s.io/guides/#install-standard-channel
+#data "http" "gateway_api_crds" {
+#  url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml"
+#
+#  request_headers = {
+#    Accept = "application/yaml"
+#  }
+#}
+#
+#data "kubectl_file_documents" "gateway_api_crds" {
+#    content = data.http.gateway_api_crds.response_body
+#}
+#
+## Using data.http.gateway_api_install.response_body directly in kubectl_manifest
+## results in only the first manifest being applied.
+#resource "kubectl_manifest" "gateway_api_crds" {
+#    for_each  = data.kubectl_file_documents.gateway_api_crds.manifests
+#    yaml_body = each.value
+#}
 
 resource "kubernetes_namespace" "namespace" {
   metadata {

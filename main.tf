@@ -20,13 +20,6 @@ terraform {
     }
 }
 
-locals {
-    # strorage_type options: nfs, local-path, topolvm
-    rook_ceph         = true
-    cert_manager      = true
-    metrics_server    = true
-}
-
 provider "kubectl" {
   load_config_file  = true
   config_context    = var.context
@@ -39,14 +32,14 @@ provider "kubernetes" {
 
 # Install the cert-manager helm chart
 module "cert_manager" {
-    count = local.cert_manager ? 1 : 0
+    count = var.cert_manager ? 1 : 0
     source = "./modules/cert-manager"
 }
 
 # Install the metrics-server helm chart
 # cli: command = ["/metrics-server", "--cert-dir=/tmp", "--secure-port=10250", "--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname", "--kubelet-use-node-status-port", "--metric-resolution=15s", "--kubelet-insecure-tls"]
 resource "helm_release" "metrics_server" {
-  count = local.metrics_server ? 1 : 0
+  count = var.metrics_server ? 1 : 0
   namespace = "kube-system"
   chart = "metrics-server"
   repository = "https://kubernetes-sigs.github.io/metrics-server"
@@ -61,10 +54,20 @@ resource "helm_release" "metrics_server" {
   }
 }
 
-module "rook_ceph" {
-    count = local.rook_ceph ? 1 : 0
-    source = "./modules/rook-ceph"
-    rook_ceph_cluster = var.rook_ceph_cluster
+module "initialize" {
+    count = 1
+    source = "./modules/initialize"
+}
+
+#module "rook_ceph" {
+#    count = local.rook_ceph ? 1 : 0
+#    source = "./modules/rook-ceph"
+#    rook_ceph_cluster = var.rook_ceph_cluster
+#}
+
+module "ceph_cluster" {
+    count = var.rook_ceph_cluster ? 1 : 0
+    source = "./modules/ceph-cluster"
 }
 
 ## Begin storage resources
@@ -78,25 +81,25 @@ module "rook_ceph" {
 #    depends_on = [ module.cert_manager ]
 #}
 
-#module "gateway" {
-#    source = "./modules/gateway"
-#}
-#
-#module "gateway-routes" {
-#    source = "./modules/gateway-routes"
-#    hostname = var.domain
-#    depends_on = [ module.gateway, module.monitoring, module.dashboard ]
-#}
-#
-#module "dashboard" {
-#    source = "./modules/dashboard"
-#    depends_on = [ module.gateway ]
-#}
-#
-#module "monitoring" {
-#    source = "./modules/monitoring"
-#    depends_on = [ module.dashboard, module.gateway, module.storage ]
+module "gateway" {
+    source = "./modules/gateway"
+}
+
+module "gateway-routes" {
+    source = "./modules/gateway-routes"
+    hostname = var.domain
+    depends_on = [ module.gateway, module.monitoring, module.dashboard ]
+}
+
+module "dashboard" {
+    count = var.dashboard ? 1 : 0
+    source = "./modules/dashboard"
+}
+
+module "monitoring" {
+    source = "./modules/monitoring"
+    depends_on = [ module.dashboard, module.gateway]
 #    storage_class_name = module.storage.storage_class_name
-#    slack_api_url = var.slack_api_url
-#    slack_channel = "#alertmanager"
-#}
+    slack_api_url = var.slack_api_url
+    slack_channel = "#alertmanager"
+}

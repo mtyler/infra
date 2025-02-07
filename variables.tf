@@ -16,7 +16,31 @@ variable "domain" {
   default     = "k8s.local"
 }
 
+variable "rook_ceph" {
+  description = "Deploy the Rook Ceph Operator"
+  type        = bool
+  default     = true
+}
+
 variable "rook_ceph_cluster" {
   description = "Deploy the Rook Ceph Cluster"
   default = "false"
+}
+
+variable "cert_manager" {
+  description = "Deploy the Cert Manager"
+  type        = bool
+  default     = true
+}
+
+variable "metrics_server" {
+  description = "Deploy the Metrics Server"
+  type        = bool
+  default     = true
+}
+
+variable "dashboard" {
+  description = "Enable or disable the dashboard module"
+  type        = bool
+  default     = true
 }

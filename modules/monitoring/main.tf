@@ -9,14 +9,14 @@ resource "helm_release" "prometheus" {
   # uncomment to enable persistent volume using storage class
   # !! currently failing when trying to chown the shared volume
   # !! need to investigate further
-  set {
-    name  = "grafana.persistence.enabled"
-    value = "true"
-  }
-  set {
-    name  = "grafana.persistence.storageClassName"
-    value = var.storage_class_name
-  }
+#  set {
+#    name  = "grafana.persistence.enabled"
+#    value = "true"
+#  }
+#  set {
+#    name  = "grafana.persistence.storageClassName"
+#    value = var.storage_class_name
+#  }
 
   # uncomment to enable persistent volume on hostpath
   ##set {
@@ -233,10 +233,10 @@ resource "helm_release" "falco" {
     name = "falcosidekick.webui.enabled"
     value = "true"
   }
-  set {
-    name = "falcosidekick.webui.redis.storageClass"
-    value = var.storage_class_name
-  }
+#  set {
+#    name = "falcosidekick.webui.redis.storageClass"
+#    value = var.storage_class_name
+#  }
   set {
     name = "falcosidekick.grafana.enabled"
     value = "true"

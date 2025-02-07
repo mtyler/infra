@@ -4,10 +4,9 @@ import time
 import subprocess
 import signal
 import sys
-import threading
 
-#pause_flag = False
-#pause_lock = threading.Lock()
+interval = 5
+do_ask = False
 
 def get_namespaces():
     result = subprocess.run(['kubectl', 'get', 'ns', '-o', 'jsonpath={.items[*].metadata.name}'], capture_output=True, text=True)
@@ -19,7 +18,7 @@ def get_nodes():
     nodes = result.stdout.split()
     return nodes
 
-def view(title, show_me, interval, ask):
+def view(title, show_me):
     #create an absraction layer that enables the user to refresh the current screen or continue
     os.system('clear')
     print(title)
@@ -30,50 +29,64 @@ def view(title, show_me, interval, ask):
         else:
             subprocess.run(each[1], shell=True)
     
-    cmd = rest(interval, ask)
+    cmd = rest()
     if cmd == 'r':
-        view(title, show_me, interval, ask)
+        view(title, show_me)
+    elif cmd == 'x':
+        watch_nodes()
+    elif cmd == 'n':
+        watch_ns()
 
-def watch_pods(args):
+def watch_ns():
     while True:
+        show_me = []
+        show_me.append(("Cluster Info:", ['kubectl', 'cluster-info']))
+        show_me.append(("Nodes:", ['kubectl', 'get', 'no', '-o', 'wide']))
+        show_me.append(("Conditions:", ['kubectl', 'get', 'no', '-o', 'jsonpath={range .items[*]}{.metadata.name}{": "}{range .status.conditions[*]}{.type}{"="}{.status}{" "}{end}{"\\n"}{end}']))
+        show_me.append(("Storage Classes:", ['kubectl', 'get', 'sc', '-o', 'wide']))
+        show_me.append(("Persistent Volumes:", ['kubectl', 'get', 'pv', '-o', 'wide']))
+        ## Uncomment to display allocated resources as displayed in the node status object
+        #show_me.append(("Allocated Resources:", ['kubectl', 'get', 'no', '-o', 'jsonpath={range .items[*]}{.metadata.name}{": cpu "}{.status.allocatable.cpu}{" mem "}{.status.allocatable.memory}{" eph-storage "}{.status.allocatable.ephemeral-storage}{"\\n"}{end}']))
+        view('Cluster Overview', show_me)
+        
         namespaces = get_namespaces()
         for ns in namespaces:
             show_me = []
             show_me.append(("Pods:", ['kubectl', 'get', 'po', '-n', ns, '-o', 'wide']))
             show_me.append(("Deployments:", ['kubectl', 'get', 'deploy', '-n', ns, '-o', 'wide']))
             show_me.append(("Services:", ['kubectl', 'get', 'svc', '-n', ns, '-o', 'wide']))
-            view(f'Namespace: {ns}', show_me, args.interval, args.ask)
+            view(f'Namespace: {ns}', show_me)
         
-        show_me = []
-        show_me.append(("Cluster Info:", ['kubectl', 'cluster-info']))
-        show_me.append(("Nodes:", ['kubectl', 'get', 'no', '-o', 'wide']))
-        show_me.append(("Conditions:", ['kubectl', 'get', 'no', '-o', 'jsonpath={range .items[*]}{.metadata.name}{": "}{range .status.conditions[*]}{.type}{"="}{.status}{" "}{end}{"\\n"}{end}']))
-        show_me.append(("Allocated Resources (describe):", r"kubectl describe nodes | grep 'Name:\\|Allocated' -A 8 | grep 'Name:\\|Allocated\\|cpu\\|memory'"))
-        ## Uncomment to display allocated resources as displayed in the node status object
-        #show_me.append(("Allocated Resources:", ['kubectl', 'get', 'no', '-o', 'jsonpath={range .items[*]}{.metadata.name}{": cpu "}{.status.allocatable.cpu}{" mem "}{.status.allocatable.memory}{" eph-storage "}{.status.allocatable.ephemeral-storage}{"\\n"}{end}']))
-        view('Cluster Overview', show_me, args.interval, args.ask)
+        # If auto scrolling is enabled, move to a watch nodes loop
+        if interval > 0:
+            watch_nodes()
 
-def watch_nodes(args):
+def watch_nodes():
     while True:
         nodes = get_nodes()
         for node in nodes:
-            os.system('clear')
-            print(f'Node: {node}')
-            print("\nPods:")
-            subprocess.run(['kubectl', 'get', 'po', '--field-selector=spec.nodeName={}'.format(node), '-o', 'wide', '-A'])
-            rest(args)
+            show_me = []
+            show_me.append((f"Pods:", ['kubectl', 'get', 'po', f'--field-selector=spec.nodeName={node}', '-A', '-o', 'wide']))
+            show_me.append(("Allocated Memory:\tRequests\tLimits", f"kubectl describe node {node} | grep 'Allocated' -A 8 | grep 'memory'"))
+            show_me.append(("Allocated CPU:\t\tRequests\tLimits", f"kubectl describe node {node} | grep 'Allocated' -A 8 | grep 'cpu'"))
+            #show_me.append(("Labels:", f"kubectl get node {node} -o json | jq '.items[].metadata.labels'"))
+            #show_me.append(("Taints:", f"kubectl get node {node} -o json | jq '.items[].spec.taints'"))
+            view(f'Node: {node}', show_me)
 
-        os.system('clear')
-        subprocess.run(['kubectl', 'top', 'no'])
-        rest(args)
-        os.system('clear')
-        subprocess.run(['kubectl', 'top', 'po', '--containers', '-A'])
-        rest(args)        
+        # If auto scrolling is enabled, move to a watch namespaces loop
+        if interval > 0:
+            watch_ns()
 
-def rest(interval, ask):
+##
+# TODO
+# Implement a method that shows deeper into cluster-wide resources
+# aka cluster roles, cluster role bindings, secrets, config maps, etc. 
+# def dig_deeper():
+#
+def rest():
     cmd = ''
-    if ask:
-        cmd = input("\nCtrl+c exit | r+Enter refresh | Press Enter to continue:")
+    if do_ask:
+        cmd = input("\nCtrl+c exit | r+Enter refresh | x+Enter nodes | n+Enter ns | Press Enter to continue:")
     else:
         time.sleep(interval)
     return cmd
@@ -82,7 +95,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def print_to_log(message):
-    log_file_path = os.path.join(os.path.dirname(__file__), 'watch-all-pods.log')
+    log_file_path = os.path.join(os.path.dirname(__file__), f'{os.path.splitext(os.path.basename(__file__))[0]}.log')
     with open(log_file_path, 'a') as log_file:
         log_file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
 
@@ -93,15 +106,17 @@ def parse_args():
     parser.add_argument('--ask', action='store_true', help='Ask for confirmation before each iteration (default: False)')
     return parser.parse_args()
 
-if __name__ == "__main__":
+def main(args):
     args = parse_args()
-    REST = args.interval
-    if args.ask:
-        pause_flag = True
+    global interval
+    global do_ask
+    interval = args.interval
+    do_ask = args.ask
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    if args.nodes:
-        watch_nodes(args)
-    else:
-        watch_pods(args)
+    # Begin watching namespaces
+    watch_ns()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

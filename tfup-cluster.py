@@ -17,35 +17,37 @@ def clean_tf():
 def rollout(env, plan, tf_args):
     if plan:
         # Use tofu to plan and apply tf scripts
-        plan_command = 'source {} && tofu plan -concise {}'.format(env, tf_args)
+        plan_command = f'source {env} && tofu plan -concise {tf_args}'
         plan_result = os.system(plan_command)
         if plan_result != 0:
             print("Error: 'tofu plan' command failed with exit code", plan_result)
             exit(1)
-        os.system('source {} && tofu apply -concise {}'.format(env, tf_args))    
+        os.system(f'source {env} && tofu apply -concise {tf_args}')
     else:
         # this is meant to be a faster path for deployments
-        os.system('source {} && tofu apply -concise {} -auto-approve -compact-warnings'.format(env, tf_args))
+        os.system(f'source {env} && tofu apply -concise {tf_args} -auto-approve -compact-warnings')
 
 def converge(args):
-    # intialize tofu
-    os.system('tofu init')
-
+    
     # plan and apply the gateway module to lay down CRDs
     # https://github.com/hashicorp/terraform-provider-kubernetes/issues/1367
-    if args.crdprep:
-         print("Apply modules with CRDs")
+    if args.init:
+        print("Initialize tofu")
+        os.system('tofu init -upgrade')
+
+        print("Initialize cluster by applying CRDs")
          #rollout(f"-var=context={args.context} -target=module.gateway")
-         rollout(args.env, args.plan, f"-var=context={args.context} -target=module.cert_manager")
-         print("Run monkeypatch...")
-         os.system("python3 ./monkeypatch/kubeProxy-metricsBindAddress.py")
-    
-    if args.orch:
-        print("Begin orchestration of cluster initialization")
-        rollout(args.env, args.plan, f"-var=context={args.context} -target=module.cert_manager")
-        rollout(args.env, args.plan, f"-var=context={args.context} -target=module.rook_ceph")
-        print("Orchestration complete.")
-        return
+         #rollout(args.env, args.plan, f"-var=context={args.context} -target=module.cert_manager")
+        rollout(args.env, args.plan, f"-var=context={args.context} -target=module.initialize")
+#         print("Run monkeypatch...")
+#         os.system("python3 ./monkeypatch/kubeProxy-metricsBindAddress.py")
+        return        
+    #if args.orch:
+    #    print("Begin orchestration of cluster initialization")
+    #    rollout(args.env, args.plan, f"-var=context={args.context} -target=module.cert_manager")
+    #    rollout(args.env, args.plan, f"-var=context={args.context} -target=module.rook_ceph")
+    #    print("Orchestration complete.")
+    #    return
     
     if args.run != None:
         print("Running custom command")
@@ -61,10 +63,10 @@ def main():
     parser = argparse.ArgumentParser(description="Setup a k8s cluster in vagrant")
     parser.add_argument('--context', type=str, default="kubernetes-admin@kubernetes", help='Name of the cluster')
     parser.add_argument('--converge', required=False, help='Converge the cluster', action='store_true')
-    parser.add_argument('--crdprep', required=False, help='Converge crds before the cluster', action='store_true')
+    parser.add_argument('--init', required=False, help='Converge crds before the cluster', action='store_true')
     parser.add_argument('--clean', required=False, help='Clean the cluster', action='store_true')
     parser.add_argument('--env', type=str, default="./envs/dev/.env", help='path of the environment file')
-    parser.add_argument('--orch', required=False, help='Orchestrate the initialization of the cluster', action='store_true')
+    #parser.add_argument('--orch', required=False, help='Orchestrate the initialization of the cluster', action='store_true')
     parser.add_argument('--plan', required=False, help='Do not auto approve the plan', action='store_true')
     parser.add_argument('--run', type=str, help='Run a custom command, e.g. --run="-var=foo=bar"')
     args = parser.parse_args()
