@@ -11,6 +11,12 @@ kubectl krew install rook-ceph
 - export TF_VAR_slack_api_url="https://hooks.slaxxxREPLACExWITHxYOURxHOOKxx/xxxxxvzJ"
 
 
+## Post Setup
+
+Grafana Credentials
+kubectl get secrets -n monitoring prometheus-grafana -o jsonpath='{.data.admin-password}' | base64 --decode
+kubectl get secrets -n monitoring prometheus-grafana -o jsonpath='{.data.admin-user}' | base64 --decode
+
 ### Alert setup
 
 This is required to allow the kubeProxy to share stats with Prometheus
@@ -45,7 +51,7 @@ lsblk -f
 delete all evicted pods
 kubectl delete pods -A --field-selector=status.phase=Failed --wait=false
 
-k logs -l tier=control-plane --all-containers=true -n kube-system | grep -i error
+kubectl logs -l tier=control-plane --all-containers=true -n kube-system | grep -i error
 
 rook operator labels
 app=rook-ceph-operator
@@ -58,10 +64,3 @@ kubectl exec -n kube-system [etcd pod] -- etcdctl --endpoints [etcd endpoint url
 
 k exec -n kube-system pod/etcd-cp1 -- etcdctl --endpoints https://172.16.159.131:2379 --cert /etc/kubernetes/pki/etcd/server.crt --key /etc/kubernetes/pki/etcd/server.key --cacert /etc/kubernetes/pki/etcd/ca.crt snapshot save /var/lib/etcd/etcd-snap-0129.db
 
-
-## rook notes
-
-mtyler@Mikes-MacBook-Pro-2 infra % k logs -n rook-ceph-cluster pods/rook-ceph-detect-version-nh5nz init-copy-binaries
-unable to retrieve container logs for containerd://104cc827e372d19a52c7622385e6ded4967e7f660e87ceb89456a8e2eafdf6ba%
-mtyler@Mikes-MacBook-Pro-2 infra % k logs -n rook-ceph-cluster pods/rook-ceph-detect-version-nh5nz cmd-reporter
-Error from server (BadRequest): container "cmd-reporter" in pod "rook-ceph-detect-version-nh5nz" is terminated

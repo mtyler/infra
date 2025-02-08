@@ -1,5 +1,4 @@
 #!/opt/homebrew/bin/python3
-
 import os
 import argparse
 import shutil
@@ -24,11 +23,14 @@ def rollout(env, plan, tf_args):
             exit(1)
         os.system(f'source {env} && tofu apply -concise {tf_args}')
     else:
-        # this is meant to be a faster path for deployments
+        print("Converging cluster with shortcuts, use --plan to avoid auto-approve")
         os.system(f'source {env} && tofu apply -concise {tf_args} -auto-approve -compact-warnings')
 
 def converge(args):
-    
+    if args.clean:
+        print("Cleaning terraform stateful objects")
+        clean_tf()
+
     # plan and apply the gateway module to lay down CRDs
     # https://github.com/hashicorp/terraform-provider-kubernetes/issues/1367
     if args.init:
@@ -36,21 +38,15 @@ def converge(args):
         os.system('tofu init -upgrade')
 
         print("Initialize cluster by applying CRDs")
-         #rollout(f"-var=context={args.context} -target=module.gateway")
-         #rollout(args.env, args.plan, f"-var=context={args.context} -target=module.cert_manager")
-        rollout(args.env, args.plan, f"-var=context={args.context} -target=module.initialize")
+        rollout(args.env, args.plan, f"-var=context={args.context} -target=module.gateway")
+        rollout(args.env, args.plan, f"-var=context={args.context} -target=module.cert_manager")
 #         print("Run monkeypatch...")
 #         os.system("python3 ./monkeypatch/kubeProxy-metricsBindAddress.py")
-        return        
-    #if args.orch:
-    #    print("Begin orchestration of cluster initialization")
-    #    rollout(args.env, args.plan, f"-var=context={args.context} -target=module.cert_manager")
-    #    rollout(args.env, args.plan, f"-var=context={args.context} -target=module.rook_ceph")
-    #    print("Orchestration complete.")
-    #    return
+#        print("!! Warning !! CRD modules applied ONLY")
+#        return        
     
     if args.run != None:
-        print("Running custom command")
+        print("Running with arbitrary command injection")
         rollout(args.env, args.plan, f"-var=context={args.context} {args.run}")
         print("Command complete.")
         return
@@ -62,19 +58,16 @@ def converge(args):
 def main():
     parser = argparse.ArgumentParser(description="Setup a k8s cluster in vagrant")
     parser.add_argument('--context', type=str, default="kubernetes-admin@kubernetes", help='Name of the cluster')
-    parser.add_argument('--converge', required=False, help='Converge the cluster', action='store_true')
     parser.add_argument('--init', required=False, help='Converge crds before the cluster', action='store_true')
     parser.add_argument('--clean', required=False, help='Clean the cluster', action='store_true')
     parser.add_argument('--env', type=str, default="./envs/dev/.env", help='path of the environment file')
-    #parser.add_argument('--orch', required=False, help='Orchestrate the initialization of the cluster', action='store_true')
     parser.add_argument('--plan', required=False, help='Do not auto approve the plan', action='store_true')
     parser.add_argument('--run', type=str, help='Run a custom command, e.g. --run="-var=foo=bar"')
     args = parser.parse_args()
-    if args.clean:
-        clean_tf()
     
-    if args.converge:
-        converge(args)
+    converge(args)
+        
+    print("Nothing left to do. Goodbye.")
 
 # Begin program
 if __name__ == "__main__":

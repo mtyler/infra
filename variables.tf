@@ -24,10 +24,17 @@ variable "rook_ceph" {
 
 variable "rook_ceph_cluster" {
   description = "Deploy the Rook Ceph Cluster"
-  default = "false"
+  type        = bool
+  default     = false
 }
 
-variable "cert_manager" {
+variable "rook_ceph_cluster_nohelm" {
+  description = "Deploy the Rook Ceph Cluster without Helm"
+  type        = bool
+  default     = true
+}
+
+variable "cert_manager_enabled" {
   description = "Deploy the Cert Manager"
   type        = bool
   default     = true
@@ -41,6 +48,12 @@ variable "metrics_server" {
 
 variable "dashboard" {
   description = "Enable or disable the dashboard module"
+  type        = bool
+  default     = true
+}
+
+variable "monitoring" {
+  description = "Enable or disable monitoring module"
   type        = bool
   default     = true
 }

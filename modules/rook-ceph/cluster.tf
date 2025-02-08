@@ -4,11 +4,15 @@
 # in this example.
 #################################################################################################################
 resource "kubernetes_manifest" "cluster_test" {
+  count = var.rook_ceph_cluster_nohelm ? 1 : 0
+  field_manager {
+    force_conflicts = true
+  }
   manifest = {
     apiVersion = "ceph.rook.io/v1"
     kind       = "CephCluster"
     metadata = {
-      name      = "my-cluster"
+      name      = "rook-ceph"
       namespace = "rook-ceph"
     }
     spec = {
@@ -73,6 +77,7 @@ resource "kubernetes_manifest" "cluster_test" {
 }
 
 resource "kubernetes_manifest" "blockpool_test" {
+  count = var.rook_ceph_cluster_nohelm ? 1 : 0
   manifest = {
     apiVersion = "ceph.rook.io/v1"
     kind       = "CephBlockPool"
@@ -91,6 +96,7 @@ resource "kubernetes_manifest" "blockpool_test" {
 }
 
 resource "kubernetes_manifest" "storageclass_rook_ceph_block" {
+  count = var.rook_ceph_cluster_nohelm ? 1 : 0
   manifest = {
     apiVersion = "storage.k8s.io/v1"
     kind       = "StorageClass"
@@ -115,3 +121,23 @@ resource "kubernetes_manifest" "storageclass_rook_ceph_block" {
     allowVolumeExpansion = true
   }
 }
+
+resource "kubernetes_manifest" "replicapool" {
+  count = var.rook_ceph_cluster_nohelm ? 1 : 0
+  manifest = {
+    apiVersion = "ceph.rook.io/v1"
+    kind       = "CephBlockPool"
+    metadata = {
+      name      = "replicapool"
+      namespace = "rook-ceph"
+    }
+    spec = {
+      failureDomain = "osd"
+      replicated = {
+        size                   = 1
+        requireSafeReplicaSize = false
+      }
+    }
+  }
+}
+

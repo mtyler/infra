@@ -1,3 +1,4 @@
+#!/opt/homebrew/bin/python3
 import argparse
 import os
 import time
@@ -69,8 +70,8 @@ def watch_nodes():
             show_me.append((f"Pods:", ['kubectl', 'get', 'po', f'--field-selector=spec.nodeName={node}', '-A', '-o', 'wide']))
             show_me.append(("Allocated Memory:\tRequests\tLimits", f"kubectl describe node {node} | grep 'Allocated' -A 8 | grep 'memory'"))
             show_me.append(("Allocated CPU:\t\tRequests\tLimits", f"kubectl describe node {node} | grep 'Allocated' -A 8 | grep 'cpu'"))
-            #show_me.append(("Labels:", f"kubectl get node {node} -o json | jq '.items[].metadata.labels'"))
-            #show_me.append(("Taints:", f"kubectl get node {node} -o json | jq '.items[].spec.taints'"))
+            show_me.append(("Labels:", f"kubectl get node {node} -o jsonpath=\"{{.metadata.labels}}\""))
+            show_me.append(("Taints:", f"kubectl get node {node} -o jsonpath=\"{{.spec.taints[*].key}}={{.spec.taints[*].effect}}\""))
             view(f'Node: {node}', show_me)
 
         # If auto scrolling is enabled, move to a watch namespaces loop

@@ -30,9 +30,14 @@ provider "kubernetes" {
     config_context = var.context
 }
 
+module "gateway" {
+    count = 1
+    source = "./modules/gateway"
+}
+
 # Install the cert-manager helm chart
 module "cert_manager" {
-    count = var.cert_manager ? 1 : 0
+    count = var.cert_manager_enabled ? 1 : 0
     source = "./modules/cert-manager"
 }
 
@@ -54,38 +59,15 @@ resource "helm_release" "metrics_server" {
   }
 }
 
-module "initialize" {
-    count = 1
-    source = "./modules/initialize"
-}
-
-#module "rook_ceph" {
-#    count = local.rook_ceph ? 1 : 0
-#    source = "./modules/rook-ceph"
-#    rook_ceph_cluster = var.rook_ceph_cluster
-#}
-
-module "ceph_cluster" {
-    count = var.rook_ceph_cluster ? 1 : 0
-    source = "./modules/ceph-cluster"
-}
-
-## Begin storage resources
-#module "storage" {
-#    # This module is meant to supprt storage type = nfs
-#    # storage_type = local.storage_type == "nfs" ? 1 : 0
-#    storage_type = local.storage_type
-#    source = "./modules/storage"
-#    nfs_share = local.nfs_share
-#    nfs_server = local.nfs_server
-#    depends_on = [ module.cert_manager ]
-#}
-
-module "gateway" {
-    source = "./modules/gateway"
+module "rook_ceph" {
+    count = var.rook_ceph ? 1 : 0
+    source = "./modules/rook-ceph"
+    rook_ceph_cluster = var.rook_ceph_cluster
+    rook_ceph_cluster_nohelm = var.rook_ceph_cluster_nohelm
 }
 
 module "gateway-routes" {
+    count = var.dashboard && var.monitoring ? 1 : 0
     source = "./modules/gateway-routes"
     hostname = var.domain
     depends_on = [ module.gateway, module.monitoring, module.dashboard ]
@@ -97,9 +79,11 @@ module "dashboard" {
 }
 
 module "monitoring" {
+    count = var.monitoring ? 1 : 0
     source = "./modules/monitoring"
     depends_on = [ module.dashboard, module.gateway]
-#    storage_class_name = module.storage.storage_class_name
+    storage_class_name = "rook-ceph-block" #module.rook_ceph.cephbp_storage_class_name
     slack_api_url = var.slack_api_url
     slack_channel = "#alertmanager"
+    falco_enabled = false
 }
