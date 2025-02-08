@@ -11,11 +11,6 @@ kubectl krew install rook-ceph
 - export TF_VAR_slack_api_url="https://hooks.slaxxxREPLACExWITHxYOURxHOOKxx/xxxxxvzJ"
 
 
-## Post Setup
-
-Grafana Credentials
-kubectl get secrets -n monitoring prometheus-grafana -o jsonpath='{.data.admin-password}' | base64 --decode
-kubectl get secrets -n monitoring prometheus-grafana -o jsonpath='{.data.admin-user}' | base64 --decode
 
 ### Alert setup
 
@@ -33,7 +28,7 @@ to:
 
 see: ./monkeypatch/kubeProxy-metricsBindAddress.py
 
-## Monitoring by hand
+### Monitoring setup by hand
 
 kubectl get events -A -w
 
@@ -46,7 +41,29 @@ df -h
 df -a
 lsblk -f
 
-## Hygene by hand
+kubectl rook-ceph ceph status
+
+
+## Operations
+
+### Access Monitoring Apps
+
+If DNS is not configured, make sure the following is in your /etc/hosts
+where the IP is the ip of a node in the cluster
+
+192.168.5.x k8s.local graf.k8s.local prom.k8s.local alert.k8s.local sec.k8s.local dash.k8s.local
+
+services will be available on the nodePort for example: http://graf.k8s.local:30080
+
+Grafana Credentials
+kubectl get secrets -n monitoring prometheus-grafana -o jsonpath='{.data.admin-password}' | base64 --decode
+kubectl get secrets -n monitoring prometheus-grafana -o jsonpath='{.data.admin-user}' | base64 --decode
+
+Falco Creds
+admin:admin
+
+
+### Hygene by hand
 
 delete all evicted pods
 kubectl delete pods -A --field-selector=status.phase=Failed --wait=false
@@ -58,7 +75,7 @@ app=rook-ceph-operator
 app=rook-discover
 
 
-## Take Etcd Snapshot
+### Take Etcd Snapshot
 
 kubectl exec -n kube-system [etcd pod] -- etcdctl --endpoints [etcd endpoint url] --cert /etc/kubernetes/pki/etcd/server.crt --key /etc/kubernetes/pki/etcd/server.key --cacert /etc/kubernetes/pki/etcd/ca.crt snapshot save [snapshot file]
 

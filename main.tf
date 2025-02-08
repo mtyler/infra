@@ -85,5 +85,5 @@ module "monitoring" {
     storage_class_name = "rook-ceph-block" #module.rook_ceph.cephbp_storage_class_name
     slack_api_url = var.slack_api_url
     slack_channel = "#alertmanager"
-    falco_enabled = false
+    falco_enabled = true
 }
